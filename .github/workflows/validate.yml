@@ -17,7 +17,7 @@ jobs:
   source-config:
     name: Verify real OpenWrt configuration
     runs-on: ubuntu-26.04
-    timeout-minutes: 30
+    timeout-minutes: 60
     steps:
       - uses: actions/checkout@v7
       - name: Install configuration prerequisites
@@ -40,6 +40,8 @@ jobs:
         run: bash ../scripts/prepare-toolchain.sh
       - name: Verify configuration against actual sources
         run: bash scripts/configure.sh
+      - name: Build and verify actual Go host compiler
+        run: bash scripts/build-go-host.sh
       - name: Save configuration diagnostics
         if: always()
         uses: actions/upload-artifact@v4
@@ -47,6 +49,7 @@ jobs:
           name: source-configuration-${{ github.run_id }}
           path: |
             openwrt/configure.log
+            openwrt/go-host-build.log
             openwrt/.config
             openwrt/.modular-sources.json
           include-hidden-files: true

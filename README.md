@@ -37,7 +37,7 @@ third-party/
   proxy-deps/plugin.json       # 自动启用的共享代理依赖源
   ...
 scripts/plugins.py             # 统一解析、准备源码、配置、核验
-scripts/prepare-toolchain.sh   # 保留官方多版本 Go，默认选择 1.27
+scripts/prepare-toolchain.sh   # 保留官方多版本 Go，显式指定构建依赖
 scripts/configure.sh           # 应用配置并严格检查日志
 scripts/prepare-compat.py      # 处理上游虚拟软件包的兼容问题
 config/.config                 # 迁移保留的完整基础配置
@@ -112,7 +112,7 @@ python3 -m unittest discover -s tests -v
 
 ## 上游兼容处理
 
-- 使用官方源提供的 Go 1.27，不再用旧式 Go 源码替换整个目录，保留版本化的 host 依赖。
+- 使用官方源提供的 Go 1.27，不替换整个目录或修改官方默认版本；把使用通用 Go 的软件包改为明确依赖 golang1.27/host，并清理旧的依赖索引。正式编译前先构建 Go host 编译器，再实际编译运行一个测试程序。
 - Nikki 默认选择 Mihomo Meta 稳定版，只从本次构建的扫描目录排除 Alpha 备用版本；上游源码保留。如果基础配置明确选择 Alpha，则改用 Alpha。
 - WeeChat 管理界面使用明确的软件包依赖，避免虚拟包与互斥版本形成循环。
 - 当前官方源中的 Prosody 依赖尚未提供的 Lua 5.4 模块；未选择 Prosody 时从扫描目录排除它。若以后启用 Prosody，会明确报错，需先补全依赖。

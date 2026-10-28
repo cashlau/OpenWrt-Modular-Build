@@ -70,6 +70,8 @@ jobs:
           cp openwrt/feeds/packages/lang/golang/golang1.27/Makefile build-info/golang1.27-Makefile
       - name: Download sources
         run: make -C openwrt download -j8
+      - name: Build and verify Go host compiler
+        run: bash scripts/build-go-host.sh
       - name: Compile firmware
         working-directory: openwrt
         env:
@@ -86,6 +88,7 @@ jobs:
             openwrt/.config
             openwrt/.modular-sources.json
             openwrt/configure.log
+            openwrt/go-host-build.log
           include-hidden-files: true
           if-no-files-found: ignore
       - name: Publish firmware

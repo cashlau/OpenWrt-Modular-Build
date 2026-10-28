@@ -88,6 +88,8 @@ class CompatibilityTests(unittest.TestCase):
         self.file('include/toplevel.mk', '')
         for name in ('golang', 'golang1.26', 'golang1.27', 'golang-bootstrap'):
             self.file(f'feeds/packages/lang/golang/{name}/Makefile', f'PKG_NAME:={name}\n')
+        consumer = self.file('feeds/packages/net/cloudflared/Makefile', 'PKG_BUILD_DEPENDS:=golang/host\n')
+        cache = self.file('feeds/packages.tmp/info/.packageinfo-cloudflared', 'stale')
         values = self.file('feeds/packages/lang/golang/golang-values.mk', 'GO_DEFAULT_VERSION:=1.26\nOTHER:=keep\n')
         feed = self.file('scripts/feeds', '#!/bin/sh\nexit 0\n')
         feed.chmod(0o755)
@@ -95,5 +97,7 @@ class CompatibilityTests(unittest.TestCase):
         link.parent.mkdir(parents=True)
         link.symlink_to(self.tree / 'feeds/packages/lang/golang/golang1.27')
         subprocess.run(['bash', str(ROOT / 'scripts/prepare-toolchain.sh')], cwd=self.tree, check=True)
-        self.assertEqual(values.read_text(), 'GO_DEFAULT_VERSION:=1.27\nOTHER:=keep\n')
+        self.assertEqual(values.read_text(), 'GO_DEFAULT_VERSION:=1.26\nOTHER:=keep\n')
         self.assertTrue((self.tree / 'feeds/packages/lang/golang/golang1.26/Makefile').exists())
+        self.assertEqual(consumer.read_text(), 'PKG_BUILD_DEPENDS:=golang1.27/host\n')
+        self.assertFalse(cache.exists())

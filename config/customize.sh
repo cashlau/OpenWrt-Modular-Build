@@ -212,15 +212,15 @@ echo "✅ 温度驱动、温度插件、footstrap、UVC、PPPoE 编译配置已�
 
 # -------- 关闭代理插件默认启用开关 --------
 
-NIKKI_CONFIG="package/feeds/nikki/nikki/files/nikki.config"
-PASSWALL_CONFIG="package/feeds/passwall_luci/luci-app-passwall/root/etc/config/passwall"
+NIKKI_CONFIG="package/feeds/nikki/nikki/files/nikki.conf"
+PASSWALL_CONFIG="package/feeds/passwall_luci/luci-app-passwall/root/usr/share/passwall/0_default_config"
 
 if [ -f "$NIKKI_CONFIG" ]; then
     sed -i \
         "s/^[[:space:]]*option[[:space:]]\+enabled[[:space:]].*/\toption enabled '0'/" \
         "$NIKKI_CONFIG"
 else
-    echo "ℹ️ 未找到指定 Nikki 配置路径，跳过源码修改"
+    test ! -d package/feeds/nikki/nikki || { echo "Nikki 配置路径变动，请检查上游"; exit 1; }
 fi
 
 if [ -f "$PASSWALL_CONFIG" ]; then
@@ -228,7 +228,7 @@ if [ -f "$PASSWALL_CONFIG" ]; then
         "s/^[[:space:]]*option[[:space:]]\+enabled[[:space:]].*/\toption enabled '0'/" \
         "$PASSWALL_CONFIG"
 else
-    echo "ℹ️ 未找到指定 PassWall 配置路径，跳过源码修改"
+    test ! -d package/feeds/passwall_luci/luci-app-passwall || { echo "PassWall 配置路径变动，请检查上游"; exit 1; }
 fi
 
 # 首次启动时再关闭服务自启，避免仅修改配置但服务仍被启动。

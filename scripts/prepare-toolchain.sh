@@ -1,31 +1,26 @@
 #!/bin/bash
 set -euo pipefail
 test -f include/toplevel.mk
-# Update the OpenWrt host Go toolchain, not Ubuntu's system Go.
-# Download and inspect the replacement before moving the existing directory.
-GO_STAGE=$(mktemp -d "$PWD/.golang-update.XXXXXX")
 
-git clone --depth=1 --branch 27.x \
-    https://github.com/sbwml/packages_lang_golang.git "$GO_STAGE/new"
+# Current official feeds use versioned Go packages. Preserve those providers.
+GO_DIR=feeds/packages/lang/golang
+test -s "$GO_DIR/golang1.27/Makefile"
+test -s "$GO_DIR/golang-bootstrap/Makefile"
+test -s "$GO_DIR/golang-values.mk"
+grep -Eq '^PKG_NAME[[:space:]]*:=[[:space:]]*golang1\.27$' "$GO_DIR/golang1.27/Makefile"
 
-echo 'Downloaded Go version declarations:'
+python3 - <<'PY'
+from pathlib import Path
+import re
+path = Path('feeds/packages/lang/golang/golang-values.mk')
+text, count = re.subn(r'^GO_DEFAULT_VERSION\s*:=.*$', 'GO_DEFAULT_VERSION:=1.27', path.read_text(), flags=re.M)
+if count != 1:
+    raise SystemExit('Unsupported official Go layout: GO_DEFAULT_VERSION missing or duplicated')
+path.write_text(text)
+PY
 
-grep -E '^[[:space:]]*(GO_VERSION_MAJOR_MINOR|GO_VERSION_PATCH|PKG_VERSION)[[:space:]]*[:?+]?=' \
-    "$GO_STAGE/new/golang/Makefile" || true
-
-if ! grep -Eq '^[[:space:]]*(GO_VERSION_MAJOR_MINOR|PKG_VERSION)[[:space:]]*[:?]?=[[:space:]]*1\.27([.[:space:]]|$)' \
-    "$GO_STAGE/new/golang/Makefile"; then
-    echo "Go 1.27 version check failed; original toolchain retained."
-    exit 1
-fi
-
-test -s "$GO_STAGE/new/golang-package.mk"
-
-mv feeds/packages/lang/golang "$GO_STAGE/original"
-mv "$GO_STAGE/new" feeds/packages/lang/golang
-
-echo "Go build files updated; original saved at $GO_STAGE/original"
-
-grep -E '^[[:space:]]*(GO_VERSION_MAJOR_MINOR|GO_VERSION_PATCH|PKG_VERSION)[[:space:]]*[:?+]?=' \
-    feeds/packages/lang/golang/golang/Makefile
-
+# Index all versioned host providers without downloading or replacing the feed.
+./scripts/feeds update -i packages
+./scripts/feeds install -p packages golang golang1.27 golang-bootstrap
+test -s package/feeds/packages/golang1.27/Makefile
+printf '%s\n' 'Official Go providers retained; default compiler selected: Go 1.27.'

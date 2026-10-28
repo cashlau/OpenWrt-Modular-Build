@@ -37,7 +37,9 @@ third-party/
   proxy-deps/plugin.json       # 自动启用的共享代理依赖源
   ...
 scripts/plugins.py             # 统一解析、准备源码、配置、核验
-scripts/prepare-toolchain.sh   # 原仓库的 Go 工具链覆盖
+scripts/prepare-toolchain.sh   # 保留官方多版本 Go，默认选择 1.27
+scripts/configure.sh           # 应用配置并严格检查日志
+scripts/prepare-compat.py      # 处理上游虚拟软件包的兼容问题
 config/.config                 # 迁移保留的完整基础配置
 config/customize.sh            # 网口、主题、时区等设备设置
 ```
@@ -97,7 +99,7 @@ Release 中的 `build-info.tar.gz` 保存完整编译配置、精简配置、插
 
 ## 检查与限制
 
-每次推送运行配置验证和自动测试。构建流程在 `make defconfig` 后核验所有受管理插件；启用项消失或关闭项被重新选中都会停止构建。
+每次推送运行配置验证、自动测试，以及基于真实 OpenWrt 源码的配置检查。构建流程在 `make defconfig` 后核验所有受管理插件；启用项消失或关闭项被重新选中都会停止构建。
 
 ```sh
 python3 scripts/plugins.py list
@@ -107,3 +109,11 @@ python3 -m unittest discover -s tests -v
 脚本测试不等于完整固件编译或硬件测试；首次使用前以 Actions 的实际构建结果为准。跨大版本升级前备份配置并确认兼容性。
 
 来源基线：原仓库提交 `ff64d04988c8a8aecc195972936e706d43185802`。原文件版权及第三方插件许可证归各自作者所有。
+
+## 上游兼容处理
+
+- 使用官方源提供的 Go 1.27，不再用旧式 Go 源码替换整个目录，保留版本化的 host 依赖。
+- Nikki 默认选择 Mihomo Meta 稳定版，只从本次构建的扫描目录排除 Alpha 备用版本；上游源码保留。如果基础配置明确选择 Alpha，则改用 Alpha。
+- WeeChat 管理界面使用明确的软件包依赖，避免虚拟包与互斥版本形成循环。
+- 当前官方源中的 Prosody 依赖尚未提供的 Lua 5.4 模块；未选择 Prosody 时从扫描目录排除它。若以后启用 Prosody，会明确报错，需先补全依赖。
+- 配置日志出现 Kconfig 错误或缺失构建依赖时停止，不再仅依赖 make 的退出状态判断成功。

@@ -56,12 +56,7 @@ jobs:
         working-directory: openwrt
         run: bash ../scripts/prepare-toolchain.sh
       - name: Apply device defaults and plugin choices
-        run: |
-          cp config/.config openwrt/.config
-          (cd openwrt && bash ../config/customize.sh)
-          python3 scripts/plugins.py config
-          make -C openwrt defconfig
-          python3 scripts/plugins.py verify
+        run: bash scripts/configure.sh
       - name: Save exact build configuration and revisions
         run: |
           mkdir -p build-info
@@ -71,7 +66,8 @@ jobs:
           (cd openwrt && ./scripts/diffconfig.sh) > build-info/config.diff
           git -C openwrt rev-parse HEAD > build-info/openwrt-commit.txt
           git -C openwrt/feeds/packages rev-parse HEAD > build-info/packages-feed-commit.txt
-          git -C openwrt/feeds/packages/lang/golang rev-parse HEAD > build-info/golang-commit.txt
+          cp openwrt/feeds/packages/lang/golang/golang-values.mk build-info/golang-values.mk
+          cp openwrt/feeds/packages/lang/golang/golang1.27/Makefile build-info/golang1.27-Makefile
       - name: Download sources
         run: make -C openwrt download -j8
       - name: Compile firmware
@@ -89,6 +85,7 @@ jobs:
             build-info/
             openwrt/.config
             openwrt/.modular-sources.json
+            openwrt/configure.log
           include-hidden-files: true
           if-no-files-found: ignore
       - name: Publish firmware

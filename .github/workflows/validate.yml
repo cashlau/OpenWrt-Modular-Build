@@ -14,3 +14,40 @@ jobs:
       - run: python3 -m unittest discover -s tests -v
       - name: Check shell syntax
         run: find scripts config third-party -type f -name '*.sh' -exec bash -n {} +
+  source-config:
+    name: Verify real OpenWrt configuration
+    runs-on: ubuntu-26.04
+    timeout-minutes: 30
+    steps:
+      - uses: actions/checkout@v7
+      - name: Install configuration prerequisites
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang flex bison g++ gawk gettext git \
+            libncurses-dev libssl-dev rsync unzip zlib1g-dev file wget \
+            python3-pyelftools libglib2.0-dev-bin
+      - name: Get latest stable source
+        run: |
+          set -euo pipefail
+          TAG=$(git ls-remote --tags --refs https://github.com/openwrt/openwrt.git \
+            | awk -F/ '{print $NF}' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V | tail -n1)
+          test -n "$TAG"
+          git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git openwrt
+      - run: python3 scripts/plugins.py prepare
+      - name: Select official Go toolchain
+        working-directory: openwrt
+        run: bash ../scripts/prepare-toolchain.sh
+      - name: Verify configuration against actual sources
+        run: bash scripts/configure.sh
+      - name: Save configuration diagnostics
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: source-configuration-${{ github.run_id }}
+          path: |
+            openwrt/configure.log
+            openwrt/.config
+            openwrt/.modular-sources.json
+          include-hidden-files: true
+          if-no-files-found: ignore

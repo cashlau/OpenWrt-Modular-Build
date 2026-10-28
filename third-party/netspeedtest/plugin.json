@@ -1,0 +1,14 @@
+{
+  "packages": [
+    "luci-app-netspeedtest"
+  ],
+  "sources": [
+    {
+      "name": "luci-app-netspeedtest",
+      "url": "https://github.com/muink/luci-app-netspeedtest.git",
+      "ref": "master",
+      "kind": "clone"
+    }
+  ],
+  "requires": []
+}

@@ -1,0 +1,17 @@
+{
+  "packages": [
+    "luci-app-nikki",
+    "nikki"
+  ],
+  "sources": [
+    {
+      "name": "nikki",
+      "url": "https://github.com/nikkinikki-org/OpenWrt-nikki.git",
+      "ref": "main",
+      "kind": "feed"
+    }
+  ],
+  "requires": [
+    "proxy-deps"
+  ]
+}

@@ -1,0 +1,17 @@
+{
+  "packages": [
+    "mosdns",
+    "luci-app-mosdns"
+  ],
+  "sources": [
+    {
+      "name": "mosdns",
+      "url": "https://github.com/sbwml/luci-app-mosdns.git",
+      "ref": "v5",
+      "kind": "clone"
+    }
+  ],
+  "requires": [
+    "proxy-deps"
+  ]
+}

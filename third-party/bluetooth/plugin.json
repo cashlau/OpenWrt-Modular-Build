@@ -1,0 +1,28 @@
+{
+  "packages": [
+    "luci-app-bluetooth",
+    "expect",
+    "bluez-alsa"
+  ],
+  "sources": [
+    {
+      "name": "luci-app-bluetooth",
+      "url": "https://github.com/sbwml/luci-app-bluetooth.git",
+      "ref": "main",
+      "kind": "clone"
+    },
+    {
+      "name": "expect",
+      "url": "https://github.com/sbwml/package_new_expect.git",
+      "ref": "",
+      "kind": "clone"
+    },
+    {
+      "name": "bluez-alsa",
+      "url": "https://github.com/sbwml/package_new_bluez-alsa.git",
+      "ref": "main",
+      "kind": "clone"
+    }
+  ],
+  "requires": []
+}

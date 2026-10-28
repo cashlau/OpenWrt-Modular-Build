@@ -1,0 +1,14 @@
+{
+  "packages": [
+    "luci-app-usb_printer"
+  ],
+  "sources": [
+    {
+      "name": "luci-app-usb-printer",
+      "url": "https://github.com/cashlau/luci-app-usb_printer.git",
+      "ref": "",
+      "kind": "clone"
+    }
+  ],
+  "requires": []
+}

@@ -1,0 +1,14 @@
+{
+  "packages": [
+    "luci-app-pushbot"
+  ],
+  "sources": [
+    {
+      "name": "luci-app-pushbot",
+      "url": "https://github.com/zzsj0928/luci-app-pushbot.git",
+      "ref": "",
+      "kind": "clone"
+    }
+  ],
+  "requires": []
+}

@@ -1,0 +1,17 @@
+{
+  "packages": [
+    "luci-app-momo",
+    "momo"
+  ],
+  "sources": [
+    {
+      "name": "momo",
+      "url": "https://github.com/nikkinikki-org/OpenWrt-momo.git",
+      "ref": "main",
+      "kind": "feed"
+    }
+  ],
+  "requires": [
+    "proxy-deps"
+  ]
+}

@@ -1,0 +1,108 @@
+name: OpenWrt Modular Build
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: '0 0 * * 3'
+
+permissions:
+  contents: read
+
+concurrency:
+  group: firmware-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  build:
+    runs-on: ubuntu-26.04
+    timeout-minutes: 360
+    permissions:
+      contents: write
+    steps:
+      - uses: actions/checkout@v7
+      - name: Validate plugin catalog
+        run: |
+          python3 scripts/plugins.py list
+          python3 -m unittest discover -s tests -v
+      - name: Free disk space
+        uses: endersonmenezes/free-disk-space@v4
+        with:
+          remove_android: true
+          remove_dotnet: true
+          remove_haskell: true
+          remove_tool_cache: true
+          remove_swap: true
+      - name: Install build dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y build-essential clang flex bison g++ gawk \
+            gcc-multilib g++-multilib gettext git libncurses-dev libssl-dev \
+            rsync unzip zlib1g-dev file wget python3-pyelftools ccache \
+            libglib2.0-dev-bin jq
+          command -v gdbus-codegen
+      - name: Resolve latest stable OpenWrt release
+        id: upstream
+        run: |
+          set -euo pipefail
+          TAG=$(git ls-remote --tags --refs https://github.com/openwrt/openwrt.git \
+            | awk -F/ '{print $NF}' | grep -E '^v[0-9]+\.[0-9]+\.[0-9]+$' \
+            | sort -V | tail -n1)
+          test -n "$TAG"
+          echo "tag=$TAG" >> "$GITHUB_OUTPUT"
+          git clone --depth=1 --branch "$TAG" https://github.com/openwrt/openwrt.git openwrt
+      - name: Prepare selected plugins and feeds
+        run: python3 scripts/plugins.py prepare
+      - name: Prepare OpenWrt Go toolchain
+        working-directory: openwrt
+        run: bash ../scripts/prepare-toolchain.sh
+      - name: Apply device defaults and plugin choices
+        run: |
+          cp config/.config openwrt/.config
+          (cd openwrt && bash ../config/customize.sh)
+          python3 scripts/plugins.py config
+          make -C openwrt defconfig
+          python3 scripts/plugins.py verify
+      - name: Save exact build configuration and revisions
+        run: |
+          mkdir -p build-info
+          cp openwrt/.config build-info/config.full
+          cp openwrt/.modular-sources.json build-info/plugin-sources.json
+          cp third-party/plugins.conf build-info/plugins.conf
+          (cd openwrt && ./scripts/diffconfig.sh) > build-info/config.diff
+          git -C openwrt rev-parse HEAD > build-info/openwrt-commit.txt
+          git -C openwrt/feeds/packages rev-parse HEAD > build-info/packages-feed-commit.txt
+          git -C openwrt/feeds/packages/lang/golang rev-parse HEAD > build-info/golang-commit.txt
+      - name: Download sources
+        run: make -C openwrt download -j8
+      - name: Compile firmware
+        working-directory: openwrt
+        env:
+          GITHUB_ACTIONS: 'false'
+          CARGO_BUILD_JOBS: '2'
+        run: make -j"$(nproc)" || make -j1 V=s
+      - name: Upload build information
+        if: always()
+        uses: actions/upload-artifact@v4
+        with:
+          name: build-info-${{ github.run_id }}-${{ github.run_attempt }}
+          path: |
+            build-info/
+            openwrt/.config
+            openwrt/.modular-sources.json
+          include-hidden-files: true
+          if-no-files-found: ignore
+      - name: Publish firmware
+        env:
+          GH_TOKEN: ${{ github.token }}
+          UPSTREAM_TAG: ${{ steps.upstream.outputs.tag }}
+        run: |
+          set -euo pipefail
+          shopt -s nullglob
+          images=(openwrt/bin/targets/x86/64/*.img.gz)
+          test "${#images[@]}" -gt 0
+          TAG="${UPSTREAM_TAG}-build-${GITHUB_RUN_NUMBER}-${GITHUB_RUN_ATTEMPT}"
+          tar -czf build-info.tar.gz build-info
+          printf 'OpenWrt %s\n构建时间：%s（Asia/Taipei）\n插件选择及实际源码提交见 build-info.tar.gz。\n' \
+            "$UPSTREAM_TAG" "$(TZ=Asia/Taipei date '+%Y-%m-%d %H:%M:%S')" > release-notes.txt
+          gh release create "$TAG" "${images[@]}" build-info.tar.gz \
+            --target "$GITHUB_SHA" --title "OpenWrt x86_64 $TAG" --notes-file release-notes.txt

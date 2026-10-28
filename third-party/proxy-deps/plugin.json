@@ -1,0 +1,12 @@
+{
+  "packages": [],
+  "sources": [
+    {
+      "name": "passwall_packages",
+      "url": "https://github.com/Openwrt-Passwall/openwrt-passwall-packages.git",
+      "ref": "main",
+      "kind": "feed"
+    }
+  ],
+  "requires": []
+}

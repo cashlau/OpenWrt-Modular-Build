@@ -1,0 +1,15 @@
+{
+  "packages": [
+    "luci-app-rtp2httpd",
+    "rtp2httpd"
+  ],
+  "sources": [
+    {
+      "name": "rtp2httpd",
+      "url": "https://github.com/stackia/rtp2httpd.git",
+      "ref": "",
+      "kind": "feed"
+    }
+  ],
+  "requires": []
+}

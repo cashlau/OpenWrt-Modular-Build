@@ -1,0 +1,16 @@
+{
+  "packages": [
+    "luci-app-passwall"
+  ],
+  "sources": [
+    {
+      "name": "passwall_luci",
+      "url": "https://github.com/Openwrt-Passwall/openwrt-passwall.git",
+      "ref": "main",
+      "kind": "feed"
+    }
+  ],
+  "requires": [
+    "proxy-deps"
+  ]
+}

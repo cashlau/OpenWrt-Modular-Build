@@ -1,0 +1,16 @@
+name: Validate plugin configuration
+on:
+  push:
+  pull_request:
+  workflow_dispatch:
+permissions:
+  contents: read
+jobs:
+  validate:
+    runs-on: ubuntu-26.04
+    steps:
+      - uses: actions/checkout@v7
+      - run: python3 scripts/plugins.py list
+      - run: python3 -m unittest discover -s tests -v
+      - name: Check shell syntax
+        run: find scripts config third-party -type f -name '*.sh' -exec bash -n {} +

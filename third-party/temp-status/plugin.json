@@ -1,0 +1,8 @@
+{
+  "packages": [
+    "luci-app-temp-status"
+  ],
+  "sources": [],
+  "requires": [],
+  "local": "source"
+}
